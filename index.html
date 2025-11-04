@@ -4,13 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guía de 20 Cócteles Clásicos</title>
-    <!-- Configuración para PWA (Aplicación Web Progresiva) -->
-    <!-- Estas etiquetas son cruciales para la opción "Añadir a pantalla de inicio" -->
+    <!-- ------------------------------------------- -->
+    <!-- CONFIGURACIÓN PWA Y MANIFIESTO INTEGRADO -->
+    <!-- ------------------------------------------- -->
+    <!-- Nombre y apariencia para iOS (Safari) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Cócteles">
-    <link rel="icon" href="https://placehold.co/64x64/E91E63/FFFFFF?text=🍸">
+    <meta name="apple-mobile-web-app-title" content="Recetas Cocteleras">
+
+    <!-- Ícono para iOS (DEBES REEMPLAZAR EL URL) -->
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/E91E63/FFFFFF?text=🍸"> 
+
+    <!-- Color de la barra superior y favicon general -->
     <meta name="theme-color" content="#E91E63">
+    <link rel="icon" href="https://placehold.co/64x64/E91E63/FFFFFF?text=🍸">
+    
+    <!-- Enlace directo al Manifiesto (Inyectado en JS para simular) -->
+    <script>
+        // Manifiesto simulado para la instalación en Android/Chrome
+        const manifestContent = {
+            "name": "Recetas Cocteleras",
+            "short_name": "Cócteles App",
+            "start_url": ".",
+            "display": "standalone", // CRUCIAL: Abre sin la barra del navegador
+            "background_color": "#f7f7f7",
+            "theme_color": "#E91E63",
+            "icons": [
+                {
+                    "src": "https://placehold.co/192x192/E91E63/FFFFFF?text=🍸", // DEBES REEMPLAZAR ESTE ÍCONO
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "https://placehold.co/512x512/E91E63/FFFFFF?text=🍸", // Ícono grande (DEBES REEMPLAZAR ESTE ÍCONO)
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+
+        // Función para inyectar el manifest blob
+        function injectManifest() {
+            const blob = new Blob([JSON.stringify(manifestContent)], { type: 'application/json' });
+            const manifestUrl = URL.createObjectURL(blob);
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestUrl;
+            document.head.appendChild(link);
+        }
+        document.addEventListener('DOMContentLoaded', injectManifest);
+    </script>
+    
     <!-- Carga de Tailwind CSS para el diseño -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -25,7 +69,6 @@
         }
 
         .cocktail-card {
-            /* Sombra suave y borde para destacar */
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
             border-left: 5px solid #E91E63; 
             transition: transform 0.2s;
@@ -36,7 +79,6 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
         }
 
-        /* Estilo para las filas de datos con grid: 35% Etiqueta / 65% Valor */
         .data-row {
             display: grid;
             grid-template-columns: 35% 65%;
@@ -57,7 +99,6 @@
             color: #1f2937;
         }
         
-        /* Ocultamos el loader */
         .loader { display: none; } 
 
         /* Responsive: apilar etiquetas y valores en móvil */
@@ -146,13 +187,11 @@
 
         // --- FUNCIONES DE RENDERING Y LÓGICA DE LA APP ---
 
-        // Función para renderizar una ficha de cóctel (HTML)
         function renderCocktailCard(cocktail) {
             const ingredientsText = (currentUnit === 'ml') 
                 ? convertIngredientsToML(cocktail.ingredients) 
                 : cocktail.ingredients;
             
-            // Contenido de la imagen. Usa una imagen de error de carga si falla la URL.
             const imageContent = `
                 <img src="${cocktail.imageUrl}" 
                      class="w-full object-cover rounded-lg shadow-lg aspect-[4/3] sm:aspect-square" 
@@ -163,24 +202,18 @@
             return `
                 <div class="cocktail-card p-4 bg-white rounded-xl" data-search-term="${cocktail.name.toLowerCase()} ${cocktail.cat.toLowerCase()} ${cocktail.ingredients.toLowerCase()} ${cocktail.method.toLowerCase()}">
                     
-                    <!-- Encabezado de la Ficha -->
                     <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
                         <h2 class="text-xl font-bold text-gray-800">${cocktail.name}</h2>
                         <span class="text-sm font-semibold text-pink-600 bg-pink-100 px-3 py-1 rounded-full">${cocktail.cat}</span>
                     </div>
 
-                    <!-- CONTENIDO PRINCIPAL: Imagen (Izquierda) + Detalles (Derecha) -->
-                    <!-- Flexbox: flex-col en móvil, flex-row en sm: (tablet/desktop) -->
                     <div class="flex flex-col sm:flex-row gap-6"> 
 
-                        <!-- IMAGEN DEL CÓCTEL (Izquierda: 40% en desktop) -->
                         <div class="sm:w-2/5 w-full">
                             ${imageContent}
                         </div>
 
-                        <!-- Detalles de la Receta (Derecha: 60% en desktop) -->
                         <div class="sm:w-3/5 w-full">
-                            <!-- Detalles de la Receta (Usando el diseño de tabla/grilla) -->
                             <div class="space-y-1">
                                 
                                 <div class="data-row">
@@ -205,12 +238,11 @@
                                 
                             </div>
                         </div>
-                    </div> <!-- Fin del CONTENIDO PRINCIPAL -->
+                    </div> 
                 </div>
             `;
         }
 
-        // Función que realiza la conversión de Onzas a Mililitros en el texto
         function convertIngredientsToML(ingredients) {
             const ozRegex = /(\d+(\.\d+)?)\s*oz/gi;
             
@@ -221,13 +253,11 @@
             });
         }
 
-        // Renderiza todas las fichas en el contenedor
         function renderCocktails() {
             const container = document.getElementById('cocktailsContainer');
             container.innerHTML = cocktailsData.map(renderCocktailCard).join('');
         }
 
-        // Función de búsqueda/filtrado
         function filterCocktails() {
             const input = document.getElementById('searchInput');
             const filter = input.value.toLowerCase();
@@ -244,7 +274,6 @@
             });
         }
 
-        // Función para alternar las unidades (oz <-> ml)
         function toggleUnits() {
             const button = document.getElementById('convertButton');
             if (currentUnit === 'oz') {
@@ -258,10 +287,9 @@
                 button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 button.classList.add('bg-pink-600', 'hover:bg-pink-700');
             }
-            renderCocktails(); // Volver a renderizar todas las fichas con la nueva unidad
+            renderCocktails(); 
         }
         
-        // Inicializar la aplicación al cargar la ventana
         window.onload = renderCocktails;
     </script>
 </body>
