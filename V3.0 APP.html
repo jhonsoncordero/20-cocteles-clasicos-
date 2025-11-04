@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de 20 Cócteles Clásicos</title>
+    <!-- Configuración para PWA (Aplicación Web Progresiva) -->
+    <!-- Estas etiquetas son cruciales para la opción "Añadir a pantalla de inicio" -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Cócteles">
+    <link rel="icon" href="https://placehold.co/64x64/E91E63/FFFFFF?text=🍸">
+    <meta name="theme-color" content="#E91E63">
+    <!-- Carga de Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Definición de la fuente Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            padding: 0;
+            margin: 0;
+        }
+
+        .cocktail-card {
+            /* Sombra suave y borde para destacar */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            border-left: 5px solid #E91E63; 
+            transition: transform 0.2s;
+        }
+        
+        .cocktail-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilo para las filas de datos con grid: 35% Etiqueta / 65% Valor */
+        .data-row {
+            display: grid;
+            grid-template-columns: 35% 65%;
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #4b5563;
+        }
+        
+        .value {
+            color: #1f2937;
+        }
+        
+        /* Ocultamos el loader */
+        .loader { display: none; } 
+
+        /* Responsive: apilar etiquetas y valores en móvil */
+        @media (max-width: 640px) {
+            .data-row {
+                grid-template-columns: 100%;
+                padding: 0.75rem 0;
+            }
+            .value {
+                padding-top: 0.2rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div id="app" class="max-w-4xl mx-auto">
+        
+        <!-- Título principal -->
+        <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-6">
+            Guía de 20 Cócteles Clásicos
+        </h1>
+        
+        <!-- Controles: Búsqueda y Conversión -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-8">
+            <!-- Buscador -->
+            <input type="text" id="searchInput" onkeyup="filterCocktails()" placeholder="Buscar cóctel, licor o método..." 
+                   class="flex-grow p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-pink-500 focus:border-pink-500 text-gray-700">
+            
+            <!-- Botón de Conversión -->
+            <button id="convertButton" onclick="toggleUnits()"
+                    class="p-3 bg-pink-600 text-white font-bold rounded-lg shadow-md hover:bg-pink-700 transition duration-150 transform hover:scale-105 whitespace-nowrap">
+                Cambiar a ML (1 oz = 30 ml)
+            </button>
+        </div>
+
+        <!-- Leyenda de Categorías -->
+        <div class="text-sm text-center text-gray-600 mb-8 p-3 bg-white rounded-lg shadow">
+            <span class="font-semibold">Leyenda IBA:</span> 
+            <span class="ml-2">U = Unforgettables</span> | 
+            <span class="ml-2">CC = Contemporary Classics</span> | 
+            <span class="ml-2">NE = New Era</span> |
+            <span class="ml-2">N/A = Variación/No IBA</span>
+        </div>
+
+        <!-- Contenedor de Fichas de Cócteles -->
+        <div id="cocktailsContainer" class="space-y-6">
+            <!-- Las fichas se renderizarán aquí mediante JavaScript -->
+        </div>
+
+    </div>
+
+    <script>
+        // Constante para la conversión
+        const OZ_TO_ML_FACTOR = 30; // 1 oz = 30 ml
+
+        // --------------------------------------------------------
+        // ¡IMPORTANTE! Este es el array que contiene tus datos.
+        // Las URLs en 'imageUrl' deben ser las que alojaste en HTTPS.
+        // --------------------------------------------------------
+        let cocktailsData = [
+            { id: 1, name: "Oscuro y Tormentoso", cat: "NE", ingredients: "2 oz Ron Oscuro (Black Seal), 3.3-4 oz Ginger Beer", method: "Directo (Build). Verter Ginger Beer con hielo. Flotar el ron por encima. No remover.", glass: "Highball", garnish: "Gajo de Lima", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-new-era-dark-n-stormy-6695d39e2bd94.webp" },
+            { id: 2, name: "Mojito", cat: "CC", ingredients: "1.5 oz Ron Blanco Cubano, 0.7 oz Zumo de Lima fresco, 2 Cucharillas de Azúcar, Hojas de Menta, Soda", method: "Macerado (Muddle) y Build. Macerar menta, azúcar y lima. Añadir ron, hielo picado y rellenar con soda.", glass: "Highball / Collins", garnish: "Ramillete de Menta y rodaja de Lima", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-contemporary-classics-mojito-6695cdc755626.webp" },
+            { id: 3, name: "Daiquirí", cat: "U", ingredients: "2 oz Ron Blanco Cubano, 0.7 oz Zumo de Lima fresco, 2 Cucharillas de Azúcar Fino", method: "Agitado (Shake). Agitar todos los ingredientes con hielo. Colar en copa fría.", glass: "Copa de Cóctel", garnish: "No lleva (o rodaja de Lima)", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-the-unforgettables-daiquiri-6694910c5866e.webp" },
+            { id: 4, name: "Cuba Libre", cat: "CC", ingredients: "1.7 oz Ron Blanco, 0.3 oz Zumo de Lima fresco, Cola (para rellenar)", method: "Directo (Build). Añadir ron y zumo de lima en vaso con hielo. Rellenar con cola.", glass: "Highball", garnish: "Cuña de Lima", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-contemporary-classics-cuba-libre-6695cdb0a6f80.webp" },
+            { id: 5, name: "Side Car", cat: "U", ingredients: "1.7 oz Cognac, 0.7 oz Triple Sec (Cointreau), 0.7 oz Zumo de Limón fresco", method: "Agitado (Shake). Agitar con hielo y colar en copa fría (opcional borde de azúcar).", glass: "Copa de Cóctel", garnish: "Twist de Limón", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-the-unforgettables-sidecar-6694912cb8aa9.webp" },
+            { id: 6, name: "Destornillador", cat: "U", ingredients: "1.7 oz Vodka, 3.3 oz Zumo de Naranja", method: "Directo (Build). Verter vodka con hielo y rellenar con zumo de naranja.", glass: "Highball", garnish: "Rodaja de Naranja", imageUrl: "https://www.kitchengeekery.com/_next/image?url=https%3A%2F%2Fsite.kitchengeekery.com%2Fwp-content%2Fuploads%2F2021%2F01%2Fscrewdriver.jpg&w=828&q=75" },
+            { id: 7, name: "Padrino (Godfather)", cat: "CC", ingredients: "1.2 oz Whisky Escocés, 1.2 oz Amaretto", method: "Refrescado (Stir). Remover los ingredientes en vaso mezclador. Colar en Old Fashioned con hielo.", glass: "Old Fashioned", garnish: "No lleva (o Cereza al marrasquino)", imageUrl: "https://t3.ftcdn.net/jpg/08/52/35/88/360_F_852358862_yXIObhNB8zfsitV8kDH5FL1MCBl3Z9Qo.jpg" },
+            { id: 8, name: "Moscow Mule", cat: "CC", ingredients: "1.5 oz Vodka, 4 oz Ginger Beer, 0.15 oz Zumo de Lima fresco", method: "Directo (Build). Verter vodka y lima. Llenar con hielo y rellenar con Ginger Beer.", glass: "Taza de Cobre", garnish: "Rodaja de Lima", imageUrl: "https://img.freepik.com/fotos-premium/coctel-frio-moscow-mule-taza-cobre-cerveza-jengibre-lima-vodka-adornado-hojas-menta-aislado-fondo-pizarra-negra-copiar-espacio-texto_511235-2454.jpg" },
+            { id: 9, name: "Piña Colada", cat: "CC", ingredients: "1.7 oz Ron Blanco, 1 oz Crema de Coco, 1.7 oz Zumo de Piña", method: "Licuado (Blend). Licuar todos los ingredientes con hielo.", glass: "Copa Hurricane", garnish: "Rodaja de Piña y Cereza", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-contemporary-classics-pina-colada-6695cdcabbf00.webp" },
+            { id: 10, name: "White Lady", cat: "U", ingredients: "1.3 oz Ginebra, 1 oz Triple Sec (Cointreau), 0.7 oz Zumo de Limón fresco", method: "Agitado (Shake). Agitar con hielo y colar. (Opcional: añadir 1 clara de huevo y hacer doble agitación).", glass: "Copa de Cóctel", garnish: "Twist de Limón", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-the-unforgettables-white-lady-6694913318105.webp" },
+            { id: 11, name: "Ruso Negro (Black Russian)", cat: "U", ingredients: "1.7 oz Vodka, 0.7 oz Licor de Café", method: "Directo (Build). Verter vodka y licor de café en el vaso con hielo. Remover.", glass: "Old Fashioned", garnish: "No lleva", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-contemporary-classics-black-russian-6695cda4183dc.webp" },
+            { id: 12, name: "Whisky Sour", cat: "U", ingredients: "1.5 oz Whisky Bourbon, 1 oz Zumo de Limón fresco, 0.5 oz Jarabe de Azúcar", method: "Agitado (Shake). Agitar los ingredientes con hielo. Colar.", glass: "Old Fashioned", garnish: "Rodaja de Naranja y Cereza", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-the-unforgettables-whiskey-sour-66949132e6ae9.webp" },
+            { id: 13, name: "New York Sour", cat: "N/A", ingredients: "1.5 oz Whisky Bourbon, 1 oz Zumo de Limón fresco, 0.5 oz Jarabe de Azúcar, +0.5 oz Vino Tinto Seco", method: "Agitado y Flotado. Preparar como Whisky Sour, servir con hielo, y flotar el vino tinto suavemente por encima.", glass: "Old Fashioned", garnish: "Rodaja de Naranja y Cereza", imageUrl: "https://red-crown.ca/wp-content/uploads/2020/12/Red_Crown_New_York_Pomegranate_Sour.jpg" },
+            { id: 14, name: "Gin Basil Smash", cat: "N/A", ingredients: "2 oz Ginebra, 0.8 oz Zumo de Limón fresco, 0.7 oz Jarabe de Azúcar, 10-12 Hojas de Albahaca", method: "Macerado (Muddle) y Shake. Macerar albahaca, añadir el resto de ingredientes con hielo. Agitar y hacer doble colado.", glass: "Old Fashioned", garnish: "Ramillete de Albahaca", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-new-era-gin-basil-smash-6695d3a4c0967.webp" },
+            { id: 15, name: "Negroni", cat: "U", ingredients: "1 oz Ginebra, 1 oz Campari, 1 oz Vermut Rojo Dulce", method: "Refrescado (Stir) y Build. Verter los ingredientes directamente en el vaso con hielo. Remover suavemente.", glass: "Old Fashioned", garnish: "Rodaja o cáscara de Naranja", imageUrl: "https://exetergin.com/cdn/shop/articles/Negroni_Cocktail_768x500_crop_center.png?v=1686590938" },
+            { id: 16, name: "Gin Tonic", cat: "N/A", ingredients: "1.7 oz Ginebra, Tónica (para rellenar)", method: "Directo (Build). Llenar la copa con hielo, añadir ginebra y rellenar con tónica. Remover ligeramente.", glass: "Copa de Balón", garnish: "Rodaja o twist de Limón/Lima", imageUrl: "https://ginelemental.cl/cdn/shop/articles/20241210211453-gin_tonic_8f40238b-c703-49df-86c0-a91dc5af0b23.webp?v=1737487095" },
+            { id: 17, name: "Long Island Iced Tea", cat: "CC", ingredients: "0.5 oz Vodka, Ron, Ginebra, Tequila; 0.5 oz Triple Sec; 0.8 oz Zumo de Limón fresco; 1 oz Jarabe de Azúcar", method: "Agitado (Shake). Agitar los licores, Triple Sec, limón y jarabe. Colar. Rellenar con un chorrito de cola.", glass: "Collins / Highball", garnish: "Rodaja de Limón", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-contemporary-classics-long-island-iced-tea-6695cdc10c463.webp" },
+            { id: 18, name: "Kamikaze", cat: "CC", ingredients: "1 oz Vodka, 1 oz Triple Sec, 1 oz Zumo de Lima fresco", method: "Agitado (Shake). Agitar los ingredientes con hielo y colar.", glass: "Copa de Cóctel", garnish: "Rodaja de Lima", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Kamikaze-cocktail.jpg/1200px-Kamikaze-cocktail.jpg" },
+            { id: 19, name: "Caipirisima", cat: "N/A", ingredients: "2 oz Ron Blanco, 1 Lima entera (en gajos), 2 Cucharillas de Azúcar", method: "Macerado (Muddle) y Build. Macerar lima y azúcar. Añadir ron. Llenar con hielo y remover.", glass: "Old Fashioned", garnish: "Gajos de Lima", imageUrl: "https://iba-world.com/wp-content/uploads/2024/07/iba-cocktail-contemporary-classics-caipirinha-6695cda74b13a.webp" },
+            { id: 20, name: "Margarita", cat: "CC", ingredients: "1.7 oz Tequila Blanco, 0.7 oz Triple Sec, 0.5 oz Zumo de Lima fresco", method: "Agitado (Shake). Agitar con hielo. Colar. (Opcional: escarchar borde con sal).", glass: "Copa Margarita", garnish: "Borde con Sal y rodaja de Lima", imageUrl: "https://i.imgur.com/JUI4WIV.jpg" }
+        ];
+
+        let currentUnit = 'oz'; // Estado inicial: onzas
+
+        // --- FUNCIONES DE RENDERING Y LÓGICA DE LA APP ---
+
+        // Función para renderizar una ficha de cóctel (HTML)
+        function renderCocktailCard(cocktail) {
+            const ingredientsText = (currentUnit === 'ml') 
+                ? convertIngredientsToML(cocktail.ingredients) 
+                : cocktail.ingredients;
+            
+            // Contenido de la imagen. Usa una imagen de error de carga si falla la URL.
+            const imageContent = `
+                <img src="${cocktail.imageUrl}" 
+                     class="w-full object-cover rounded-lg shadow-lg aspect-[4/3] sm:aspect-square" 
+                     alt="Presentación de ${cocktail.name}"
+                     onerror="this.onerror=null; this.src='https://placehold.co/400x250/F8DEDE/E91E63?text=Error+de+Carga';">
+            `;
+
+            return `
+                <div class="cocktail-card p-4 bg-white rounded-xl" data-search-term="${cocktail.name.toLowerCase()} ${cocktail.cat.toLowerCase()} ${cocktail.ingredients.toLowerCase()} ${cocktail.method.toLowerCase()}">
+                    
+                    <!-- Encabezado de la Ficha -->
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                        <h2 class="text-xl font-bold text-gray-800">${cocktail.name}</h2>
+                        <span class="text-sm font-semibold text-pink-600 bg-pink-100 px-3 py-1 rounded-full">${cocktail.cat}</span>
+                    </div>
+
+                    <!-- CONTENIDO PRINCIPAL: Imagen (Izquierda) + Detalles (Derecha) -->
+                    <!-- Flexbox: flex-col en móvil, flex-row en sm: (tablet/desktop) -->
+                    <div class="flex flex-col sm:flex-row gap-6"> 
+
+                        <!-- IMAGEN DEL CÓCTEL (Izquierda: 40% en desktop) -->
+                        <div class="sm:w-2/5 w-full">
+                            ${imageContent}
+                        </div>
+
+                        <!-- Detalles de la Receta (Derecha: 60% en desktop) -->
+                        <div class="sm:w-3/5 w-full">
+                            <!-- Detalles de la Receta (Usando el diseño de tabla/grilla) -->
+                            <div class="space-y-1">
+                                
+                                <div class="data-row">
+                                    <span class="label">Ingredientes</span>
+                                    <span class="value font-medium text-lg">${ingredientsText}</span>
+                                </div>
+                                
+                                <div class="data-row">
+                                    <span class="label">Método</span>
+                                    <span class="value">${cocktail.method}</span>
+                                </div>
+                                
+                                <div class="data-row">
+                                    <span class="label">Vaso / Copa</span>
+                                    <span class="value">${cocktail.glass}</span>
+                                </div>
+                                
+                                <div class="data-row">
+                                    <span class="label">Decoración</span>
+                                    <span class="value">${cocktail.garnish}</span>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div> <!-- Fin del CONTENIDO PRINCIPAL -->
+                </div>
+            `;
+        }
+
+        // Función que realiza la conversión de Onzas a Mililitros en el texto
+        function convertIngredientsToML(ingredients) {
+            const ozRegex = /(\d+(\.\d+)?)\s*oz/gi;
+            
+            return ingredients.replace(ozRegex, (match, ozValue) => {
+                const mlValue = (parseFloat(ozValue) * OZ_TO_ML_FACTOR);
+                const displayValue = mlValue.toFixed(1);
+                return `${displayValue} ml`;
+            });
+        }
+
+        // Renderiza todas las fichas en el contenedor
+        function renderCocktails() {
+            const container = document.getElementById('cocktailsContainer');
+            container.innerHTML = cocktailsData.map(renderCocktailCard).join('');
+        }
+
+        // Función de búsqueda/filtrado
+        function filterCocktails() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const container = document.getElementById('cocktailsContainer');
+            const cards = container.getElementsByClassName('cocktail-card');
+
+            Array.from(cards).forEach(card => {
+                const searchTerm = card.getAttribute('data-search-term');
+                if (searchTerm.includes(filter)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Función para alternar las unidades (oz <-> ml)
+        function toggleUnits() {
+            const button = document.getElementById('convertButton');
+            if (currentUnit === 'oz') {
+                currentUnit = 'ml';
+                button.textContent = 'Cambiar a OZ (Onzas)';
+                button.classList.remove('bg-pink-600', 'hover:bg-pink-700');
+                button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            } else {
+                currentUnit = 'oz';
+                button.textContent = 'Cambiar a ML (1 oz = 30 ml)';
+                button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                button.classList.add('bg-pink-600', 'hover:bg-pink-700');
+            }
+            renderCocktails(); // Volver a renderizar todas las fichas con la nueva unidad
+        }
+        
+        // Inicializar la aplicación al cargar la ventana
+        window.onload = renderCocktails;
+    </script>
+</body>
+</html>
